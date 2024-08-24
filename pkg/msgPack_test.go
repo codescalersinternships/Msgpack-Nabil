@@ -111,8 +111,8 @@ func TestSerializer(t *testing.T) {
 		},
 		{
 			name:     "string more than 2^16 -1 characters",
-			input:    strings.Repeat("a",(1<<16) -1),
-			expected: []byte("daffff"+strings.Repeat("a",(1<<16) -1)),
+			input:    strings.Repeat("a", (1<<16)-1),
+			expected: []byte("daffff" + strings.Repeat("a", (1<<16)-1)),
 			wantErr:  false,
 		},
 		{
@@ -164,7 +164,6 @@ func TestSerializer(t *testing.T) {
 		})
 	}
 }
-
 
 func TestDeserializer(t *testing.T) {
 	tests := []struct {
