@@ -30,21 +30,19 @@ func numBytedUnsigned(num uint64, cnt int, encoded *[]byte) {
 		en+=2
 	}
 }
-
+//Serializer interface to MessagePack bytes and return array of bytes
+//if there is error it will return error
 func Serializer(applicationObject interface{}) ([]byte, error){
+	applicationObjectCopy := applicationObject
+	return serializer(applicationObjectCopy)
+}
+
+func serializer(applicationObject interface{}) ([]byte, error){
 	var encoded []byte
 
 	switch ty := applicationObject.(type) {
 	case int8:
 		num := reflect.ValueOf(ty).Int()
-		/*if (num >= -32 && num < 0) {
-			numStr := strconv.FormatInt(num, 16)
-			encoded = append(encoded, []byte(numStr)...)
-		}else{
-			numStr := strconv.FormatInt(num, 16)
-			encoded = append(encoded, []byte(strconv.FormatInt(0xD0,16))...)
-			encoded = append(encoded, []byte(numStr)...)
-		}*/
 		encoded = append(encoded, []byte(strconv.FormatInt(0xD0,16))...)
 		numByted(num, 8, &encoded)
 		
@@ -65,15 +63,6 @@ func Serializer(applicationObject interface{}) ([]byte, error){
 
 	case uint8:
 		num := reflect.ValueOf(ty).Uint()
-		/*if (num >= 128) {
-			num := reflect.ValueOf(ty).Uint()
-			numStr := strconv.FormatUint(num, 16)
-			encoded = append(encoded, []byte(strconv.FormatUint(0xCC,16))...)
-			encoded = append(encoded, []byte(numStr)...)
-		}else{
-			numStr := strconv.FormatUint(num, 16)
-			encoded = append(encoded, []byte(numStr)...)
-		}*/
 		encoded = append(encoded, []byte(strconv.FormatUint(0xCC,16))...)
 		numBytedUnsigned(num, 8, &encoded)
 
@@ -170,7 +159,7 @@ func Serializer(applicationObject interface{}) ([]byte, error){
 			return nil, fmt.Errorf("unsupported data type")
 		}
 		for _, val := range ty {
-			elements, err := Serializer(val)
+			elements, err := serializer(val)
 			if err != nil {
 				return nil, err
 			}
@@ -190,12 +179,12 @@ func Serializer(applicationObject interface{}) ([]byte, error){
 			return nil, fmt.Errorf("unsupported data type")
 		}
 		for key, val := range ty {
-			elementKey, err := Serializer(key)
+			elementKey, err := serializer(key)
 			if err != nil {
 				return nil, err
 			}
 			encoded = append(encoded, elementKey...)
-			elementVal, err := Serializer(val)
+			elementVal, err := serializer(val)
 			if err != nil {
 				return nil, err
 			}
@@ -210,8 +199,15 @@ func Serializer(applicationObject interface{}) ([]byte, error){
 }
 
 
-
+//Deserialze MessagePack bytes and return interface
+//if there is error it will return error
 func Deserializer(encoded *[]byte) (interface{}, error) {
+	encodedCopy := encoded
+	return deserializer(encodedCopy)
+}
+
+
+func deserializer(encoded *[]byte) (interface{}, error) {
 
     var decoded interface{}
 
@@ -431,7 +427,7 @@ func parseArray(encoded *[]byte, length int) ([]interface{}, error) {
     var err error
     for i := 0; i < length; i++ {
         var elem interface{}
-        elem, err = Deserializer(encoded)
+        elem, err = deserializer(encoded)
         if err != nil {
             return nil, err
         }
@@ -443,11 +439,11 @@ func parseArray(encoded *[]byte, length int) ([]interface{}, error) {
 func parseMap(encoded *[]byte, length int) (map[string]interface{}, error) {
     m := make(map[string]interface{})
     for i := 0; i < length; i++ {
-        key, err := Deserializer(encoded)
+        key, err := deserializer(encoded)
         if err != nil {
             return nil, err
         }
-        value, err := Deserializer(encoded)
+        value, err := deserializer(encoded)
         if err != nil {
             return nil, err
         }
